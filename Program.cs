@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using NativeFileDialogSharp;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -8,23 +9,29 @@ class FontPacker
 
     public static void Main(string[] args)
     {
-        string inputImagePath = "input.png";
-        string outputImagePath = "output.png";
-
-        using (Image<Rgba32> image = Image.Load<Rgba32>(inputImagePath))
+        var result = NativeFileDialogSharp.Dialog.FileOpen();
+        var outputPath = NativeFileDialogSharp.Dialog.FileSave();
+        if (result.IsOk && outputPath.IsOk)
         {
-            List<(Rectangle Bounds, Image<Rgba32> Image)> characters = ExtractCharacters(image);
-            (int newWidth, int newHeight) = CalculateNewImageSize(characters);
-            using (Image<Rgba32> newImage = new Image<Rgba32>(newWidth, newHeight, MagentaColor))
+            var inputPath = result.Path;
+            using (Image<Rgba32> image = Image.Load<Rgba32>(inputPath))
             {
-                PackCharacters(newImage, characters);
-                newImage.Save(outputImagePath, new PngEncoder 
-                { 
-                    ColorType = PngColorType.Palette,
-                    BitDepth = PngBitDepth.Bit2,
-                });
+                List<(Rectangle Bounds, Image<Rgba32> Image)> characters = ExtractCharacters(image);
+                (int newWidth, int newHeight) = CalculateNewImageSize(characters);
+                using (Image<Rgba32> newImage = new Image<Rgba32>(newWidth, newHeight, MagentaColor))
+                {
+                    PackCharacters(newImage, characters);
+                    newImage.Save(outputPath.Path, new PngEncoder
+                    {
+                        ColorType = PngColorType.Palette,
+                        BitDepth = PngBitDepth.Bit2,
+                    });
+                }
             }
         }
+
+
+
     }
 
     private static List<(Rectangle Bounds, Image<Rgba32> Image)> ExtractCharacters(Image<Rgba32> image)
